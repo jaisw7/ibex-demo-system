@@ -17,10 +17,35 @@ module top_artya7 (
   input               SPI_RX,
   output              SPI_TX,
   output              SPI_SCK
+/*
+  ,
+  inout               USB_DP,
+  inout               USB_DN,
+  output              USB_PULLUP_EN,
+  input               USB_SENSE
+*/
 );
+  parameter int SysClkFreq = 50_000_000;
   parameter SRAMInitFile = "";
 
   logic clk_sys, rst_sys_n;
+
+  // No USB PMOD present
+  wire clk_usb = 1'b0;
+  wire rst_usb_n = 1'b0;
+  wire USB_SENSE;
+  wire USB_PULLUP_EN;
+
+  wire usb_dp_i = 1'b0; //USB_DP;
+  wire usb_dn_i = 1'b0; //USB_DN;
+
+  wire usb_dp_o;
+  wire usb_dn_o;
+  wire usb_dp_en_o;
+  wire usb_dn_en_o;
+
+  assign USB_DP = usb_dp_en_o ? usb_dp_o : 1'bZ;
+  assign USB_DN = usb_dn_en_o ? usb_dn_o : 1'bZ;
 
   // Instantiating the Ibex Demo System.
   ibex_demo_system #(
@@ -32,6 +57,10 @@ module top_artya7 (
     //input
     .clk_sys_i(clk_sys),
     .rst_sys_ni(rst_sys_n),
+
+    .clk_usb_i    (clk_usb_i),
+    .rst_usb_ni   (rst_usb_ni),
+
     .gp_i({SW, BTN}),
     .uart_rx_i(UART_RX),
 
@@ -43,6 +72,23 @@ module top_artya7 (
     .spi_rx_i(SPI_RX),
     .spi_tx_o(SPI_TX),
     .spi_sck_o(SPI_SCK),
+
+    // Reception from USB host via transceiver
+    .usb_dp_i         (usb_dp_i),
+    .usb_dn_i         (usb_dn_i),
+    .usb_rx_d_i       (usb_dp_i),  // We have no external transceiver
+
+    // Transmission to USB host via transceiver
+    .usb_dp_o         (usb_dp_o),
+    .usb_dp_en_o      (dp_en_d2p),
+    .usb_dn_o         (usb_dn_o),
+    .usb_dn_en_o      (dn_en_d2p),
+
+    // Configuration and control of USB transceiver
+    .usb_sense_i      (USB_SENSE),
+    .usb_dp_pullup_o  (USB_PULLUP_EN),
+    .usb_dn_pullup_o  (),
+    .usb_rx_enable_o  (),
 
     .trst_ni(1'b1),
     .tms_i(1'b0),

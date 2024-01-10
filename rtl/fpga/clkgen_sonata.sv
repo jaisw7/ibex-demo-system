@@ -2,17 +2,30 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
-module clkgen_sonata (
+module clkgen_sonata  #(
+  parameter SysClkFreq = 50_000_000
+) (
     input IO_CLK,
     output IO_CLK_BUF,
     input IO_RST_N,
     output clk_sys,
-    output rst_sys_n
+    output rst_sys_n,
+    output clk_usb,
+    output rst_usb_n
 );
+  // Frequency of IO_CLK input
+  localparam int IOClkFreq = 25_000_000;
+
+  // Required frequency of clk_usb output
+  // - usbdev employs x4 oversampling for a 12Mbps Full Speed connection
+  localparam int USBClkFreq = 48_000_000;
+
   logic locked_pll;
   logic io_clk_buf;
-  logic clk_50_buf;
-  logic clk_50_unbuf;
+  logic clk_usb_buf;
+  logic clk_usb_unbuf;
+  logic clk_sys_buf;
+  logic clk_sys_unbuf;
   logic clk_fb_buf;
   logic clk_fb_unbuf;
 
@@ -27,16 +40,21 @@ module clkgen_sonata (
     .COMPENSATION         ("ZHOLD"),
     .STARTUP_WAIT         ("FALSE"),
     .DIVCLK_DIVIDE        (1),
-    .CLKFBOUT_MULT        (34),
+    .CLKFBOUT_MULT        (48),
     .CLKFBOUT_PHASE       (0.000),
-    .CLKOUT0_DIVIDE       (17),
+    // clk_sys output
+    .CLKOUT0_DIVIDE       ((48 * IOClkFreq) / SysClkFreq),
     .CLKOUT0_PHASE        (0.000),
     .CLKOUT0_DUTY_CYCLE   (0.500),
+    // clk_usb output
+    .CLKOUT1_DIVIDE       ((48 * IOClkFreq) / USBClkFreq),
+    .CLKOUT1_PHASE        (0.000),
+    .CLKOUT1_DUTY_CYCLE   (0.500),
     .CLKIN1_PERIOD        (40.000)
   ) pll (
     .CLKFBOUT            (clk_fb_unbuf),
-    .CLKOUT0             (clk_50_unbuf),
-    .CLKOUT1             (),
+    .CLKOUT0             (clk_sys_unbuf),
+    .CLKOUT1             (clk_usb_unbuf),
     .CLKOUT2             (),
     .CLKOUT3             (),
     .CLKOUT4             (),
@@ -67,17 +85,24 @@ module clkgen_sonata (
     .O (clk_fb_buf)
   );
 
-  BUFG clk_50_bufg (
-    .I (clk_50_unbuf),
-    .O (clk_50_buf)
+  BUFG clk_sys_bufg (
+    .I (clk_sys_unbuf),
+    .O (clk_sys_buf)
   );
 
-  assign IO_CLK_BUF = io_clk_buf;
+  BUFG clk_usb_bufg (
+    .I (clk_usb_unbuf),
+    .O (clk_usb_buf)
+  );
 
   // outputs
-  // clock
-  assign clk_sys = clk_50_buf;
+  // clocks
+  assign IO_CLK_BUF = io_clk_buf;
 
-  // reset
+  assign clk_sys = clk_sys_buf;
+  assign clk_usb = clk_usb_buf;
+
+  // resets
   assign rst_sys_n = locked_pll & IO_RST_N;
+  assign rst_usb_n = rst_sys_n;
 endmodule

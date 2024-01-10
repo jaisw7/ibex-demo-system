@@ -11,6 +11,11 @@ filesets:
       - pulp:riscv:debug_module
     files:
       - rtl/system/jtag_id_pkg.sv
+      - rtl/system/prim/prim_alert_pkg.sv
+      - rtl/system/prim/prim_mubi_pkg.sv
+      - rtl/system/top/top_pkg.sv
+      - rtl/system/tlul/tlul_pkg.sv
+      - rtl/system/tlul/tlul_err.sv
       - rtl/system/ibex_demo_system.sv
       - rtl/system/dm_top.sv
       - rtl/system/debounce.sv
@@ -18,8 +23,54 @@ filesets:
       - rtl/system/pwm.sv
       - rtl/system/pwm_wrapper.sv
       - rtl/system/uart.sv
+      - rtl/system/prim/prim_sec_anchor_buf.sv
+      - rtl/system/prim/prim_sec_anchor_flop.sv
+      - rtl/system/prim/prim_alert_sender.sv
+      - rtl/system/prim/prim_edge_detector.sv
+      - rtl/system/prim/prim_ram_2p_async_adv.sv
+      - rtl/system/prim/prim_ram_2p_adv.sv
+      - rtl/system/prim/prim_subreg_pkg.sv
+      - rtl/system/prim/prim_subreg_arb.sv
+      - rtl/system/prim/prim_subreg_ext.sv
+      - rtl/system/prim/prim_subreg.sv
+      - rtl/system/prim/prim_filter.sv
+      - rtl/system/prim/prim_diff_decode.sv
+      - rtl/system/prim/prim_intr_hw.sv
+      - rtl/system/prim/prim_reg_we_check.sv
+      - rtl/system/prim/prim_reg_cdc_arb.sv
+      - rtl/system/prim/prim_reg_cdc.sv
+      - rtl/system/prim/prim_pulse_sync.sv
+      - rtl/system/prim/prim_sync_reqack.sv
       - rtl/system/spi_host.sv
       - rtl/system/spi_top.sv
+      - rtl/system/tlul/tlul_fifo_async.sv
+      - rtl/system/tlul/tlul_fifo_sync.sv
+      - rtl/system/tlul/tlul_sram_byte.sv
+      - rtl/system/tlul/tlul_data_integ_dec.sv
+      - rtl/system/tlul/tlul_data_integ_enc.sv
+      - rtl/system/tlul/tlul_cmd_intg_chk.sv
+      - rtl/system/tlul/tlul_cmd_intg_gen.sv
+      - rtl/system/tlul/tlul_rsp_intg_chk.sv
+      - rtl/system/tlul/tlul_rsp_intg_gen.sv
+      - rtl/system/tlul/tlul_socket_1n.sv
+      - rtl/system/tlul/tlul_adapter_host.sv
+      - rtl/system/tlul/tlul_adapter_reg.sv
+      - rtl/system/tlul/tlul_adapter_sram.sv
+      - rtl/system/usbdev/usb_consts_pkg.sv
+      - rtl/system/usbdev/usbdev_pkg.sv
+      - rtl/system/usbdev/usbdev_usbif.sv
+      - rtl/system/usbdev/usb_fs_rx.sv
+      - rtl/system/usbdev/usbdev_aon_wake.sv
+      - rtl/system/usbdev/usbdev_reg_pkg.sv
+      - rtl/system/usbdev/usb_fs_nb_in_pe.sv
+      - rtl/system/usbdev/usb_fs_tx_mux.sv
+      - rtl/system/usbdev/usbdev_iomux.sv
+      - rtl/system/usbdev/usbdev_reg_top.sv
+      - rtl/system/usbdev/usb_fs_nb_out_pe.sv
+      - rtl/system/usbdev/usb_fs_tx.sv
+      - rtl/system/usbdev/usbdev_linkstate.sv
+      - rtl/system/usbdev/usbdev.sv
+      - rtl/system/usbdev/usb_fs_nb_pe.sv
     file_type: systemVerilogSource
 
   files_lint_verilator:
