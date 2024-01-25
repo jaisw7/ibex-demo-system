@@ -17,7 +17,7 @@
 
 typedef void* gpio_t;
 
-#define GPIO_FROM_BASE_ADDR(addr) ((gpio_t)addr)
+#define GPIO_FROM_BASE_ADDR(addr) ((gpio_t)(addr))
 
 void set_outputs(gpio_t gpio, uint32_t outputs);
 uint32_t read_gpio(gpio_t gpio);

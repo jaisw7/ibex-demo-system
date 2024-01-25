@@ -23,7 +23,13 @@ void test_uart_irq_handler(void) {
   }
 }
 
+  volatile float a = 1.3;
+  volatile float b = 2.7;
+  float c;
+
 int main(void) {
+  c = a * b;
+
   install_exception_handler(UART_IRQ_NUM, &test_uart_irq_handler);
   uart_enable_rx_int();
 

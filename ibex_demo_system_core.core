@@ -56,6 +56,12 @@ filesets:
       - rtl/system/tlul/tlul_adapter_host.sv
       - rtl/system/tlul/tlul_adapter_reg.sv
       - rtl/system/tlul/tlul_adapter_sram.sv
+      - rtl/system/i2c/i2c_pkg.sv
+      - rtl/system/i2c/i2c_reg_pkg.sv
+      - rtl/system/i2c/i2c_reg_top.sv
+      - rtl/system/i2c/i2c.sv
+      - rtl/system/i2c/i2c_core.sv
+      - rtl/system/i2c/i2c_fsm.sv
       - rtl/system/usbdev/usb_consts_pkg.sv
       - rtl/system/usbdev/usbdev_pkg.sv
       - rtl/system/usbdev/usbdev_usbif.sv

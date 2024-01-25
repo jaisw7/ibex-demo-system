@@ -24,7 +24,11 @@ module ibex_demo_system #(
 `ifndef VERILATOR
   input logic                 clk_usb_i,
   input logic                 rst_usb_ni,
+
+  input logic                 clk_peri_i,
+  input logic                 rst_peri_ni,
 `endif
+
   input  logic [GpiWidth-1:0] gp_i,
   output logic [GpoWidth-1:0] gp_o,
   output logic [PwmWidth-1:0] pwm_o,
@@ -51,11 +55,27 @@ module ibex_demo_system #(
   output logic                usb_dn_pullup_o,
   output logic                usb_rx_enable_o,
 
-  input  logic        tck_i,    // JTAG test clock pad
-  input  logic        tms_i,    // JTAG test mode select pad
-  input  logic        trst_ni,  // JTAG test reset pad
-  input  logic        td_i,     // JTAG test data input pad
-  output logic        td_o      // JTAG test data output pad
+  // I2C bus 0
+  input  logic                i2c0_scl_i,
+  output logic                i2c0_scl_o,
+  output logic                i2c0_scl_en_o,
+  input  logic                i2c0_sda_i,
+  output logic                i2c0_sda_o,
+  output logic                i2c0_sda_en_o,
+
+  // I2C bus 1
+  input  logic                i2c1_scl_i,
+  output logic                i2c1_scl_o,
+  output logic                i2c1_scl_en_o,
+  input  logic                i2c1_sda_i,
+  output logic                i2c1_sda_o,
+  output logic                i2c1_sda_en_o,
+
+  input  logic                tck_i,    // JTAG test clock pad
+  input  logic                tms_i,    // JTAG test mode select pad
+  input  logic                trst_ni,  // JTAG test reset pad
+  input  logic                td_i,     // JTAG test data input pad
+  output logic                td_o      // JTAG test data output pad
 );
 
 `ifdef VERILATOR
@@ -65,7 +85,13 @@ module ibex_demo_system #(
   assign rst_usb_ni  = rst_sys_ni;
 `endif
 
-  localparam logic [31:0] MEM_SIZE      = 64 * 1024; // 64 KiB
+// TODO: introduce usbdev rather than I2C?
+//`define USBDEV
+
+// TODO: drive I2C1 rather than I2C0?
+`define DRIVE_I2C1
+
+  localparam logic [31:0] MEM_SIZE      = 128 * 1024;  // 128 KiB
   localparam logic [31:0] MEM_START     = 32'h00100000;
   localparam logic [31:0] MEM_MASK      = ~(MEM_SIZE-1);
 
@@ -90,17 +116,17 @@ module ibex_demo_system #(
   localparam logic [31:0] PWM_MASK      = ~(PWM_SIZE-1);
   localparam int PwmCtrSize = 8;
 
-  parameter logic [31:0] SPI_SIZE       = 1 * 1024; // 1kB
-  parameter logic [31:0] SPI_START      = 32'h80004000;
-  parameter logic [31:0] SPI_MASK       = ~(SPI_SIZE-1);
+  localparam logic [31:0] SPI_SIZE       = 1 * 1024; // 1kB
+  localparam logic [31:0] SPI_START      = 32'h80004000;
+  localparam logic [31:0] SPI_MASK       = ~(SPI_SIZE-1);
 
   localparam logic [31:0] USBDEV_SIZE   = 4 * 1024; // 4 KiB
   localparam logic [31:0] USBDEV_START  = 32'h80005000;
   localparam logic [31:0] USBDEV_MASK   = ~(USBDEV_SIZE-1);
 
-  parameter logic [31:0] SIM_CTRL_SIZE  = 1 * 1024; // 1kB
-  parameter logic [31:0] SIM_CTRL_START = 32'h20000;
-  parameter logic [31:0] SIM_CTRL_MASK  = ~(SIM_CTRL_SIZE-1);
+  localparam logic [31:0] SIM_CTRL_SIZE  = 1 * 1024; // 1kB
+  localparam logic [31:0] SIM_CTRL_START = 32'h20000;
+  localparam logic [31:0] SIM_CTRL_MASK  = ~(SIM_CTRL_SIZE-1);
 
   // debug functionality is optional
   localparam bit DBG = 1;
@@ -473,8 +499,6 @@ module ibex_demo_system #(
   tlul_pkg::tl_h2d_t tl_d_ibex2fifo;
   tlul_pkg::tl_d2h_t tl_d_fifo2ibex;
 
-// TODO: still to be resolved - integrity generation and checking
-// alert handling
   tlul_adapter_host #(
     .MAX_REQS(2),
     .EnableDataIntgGen(1'b1)
@@ -507,14 +531,20 @@ module ibex_demo_system #(
   ) fifo_d (
     .clk_h_i     (clk_sys_i),
     .rst_h_ni    (rst_sys_ni),
+`ifdef USBDEV
     .clk_d_i     (clk_usb_i),
     .rst_d_ni    (rst_usb_ni),
+`else
+    .clk_d_i     (clk_peri_i),
+    .rst_d_ni    (rst_peri_ni),
+`endif
     .tl_h_i      (tl_d_ibex2fifo),
     .tl_h_o      (tl_d_fifo2ibex),
     .tl_d_o      (usb_tl_i),
     .tl_d_i      (usb_tl_o)
   );
 
+`ifdef USBDEV
   usbdev #(
     .Stub(1'b0)
   ) u_usbdev (
@@ -584,6 +614,74 @@ module ibex_demo_system #(
     .intr_rx_bitstuff_err_o (),
     .intr_frame_o           ()
   );
+
+// I2C buses are unavailable
+assign {i2c0_scl_o, i2c0_scl_en_o, i2c0_sda_o, i2c0_sda_en_o,
+        i2c1_scl_o, i2c1_scl_en_o, i2c1_sda_o, i2c1_sda_en_o} = 'b0;
+
+`else
+
+i2c u_i2c(
+    .clk_i                    (clk_peri_i),
+    .rst_ni                   (rst_peri_ni),
+
+    // TODO: temporarily replaces u_usbdev
+    .tl_i                     (usb_tl_i),
+    .tl_o                     (usb_tl_o),
+
+    // Alerts are unused
+    .alert_rx_i (4'b0),
+    .alert_tx_o (),
+
+`ifdef DRIVE_I2C1
+    .cio_scl_i                (i2c1_scl_i),
+    .cio_scl_o                (i2c1_scl_o),
+    .cio_scl_en_o             (i2c1_scl_en_o),
+    .cio_sda_i                (i2c1_sda_i),
+    .cio_sda_o                (i2c1_sda_o),
+    .cio_sda_en_o             (i2c1_sda_en_o),
+`else
+    .cio_scl_i                (i2c0_scl_i),
+    .cio_scl_o                (i2c0_scl_o),
+    .cio_scl_en_o             (i2c0_scl_en_o),
+    .cio_sda_i                (i2c0_sda_i),
+    .cio_sda_o                (i2c0_sda_o),
+    .cio_sda_en_o             (i2c0_sda_en_o),
+`endif
+
+    .intr_fmt_threshold_o     (),
+    .intr_rx_threshold_o      (),
+    .intr_fmt_overflow_o      (),
+    .intr_rx_overflow_o       (),
+    .intr_nak_o               (),
+    .intr_scl_interference_o  (),
+    .intr_sda_interference_o  (),
+    .intr_stretch_timeout_o   (),
+    .intr_sda_unstable_o      (),
+    .intr_cmd_complete_o      (),
+    .intr_tx_stretch_o        (),
+    .intr_tx_overflow_o       (),
+    .intr_acq_full_o          (),
+    .intr_unexp_stop_o        (),
+    .intr_host_timeout_o      ()
+);
+
+// Feed all I2C traffic to the other port as a pure output (always enabled) since this allows
+// us very easily to attach the logic analyser.
+`ifdef DRIVE_I2C1
+assign {i2c0_scl_o, i2c0_scl_en_o, i2c0_sda_o, i2c0_sda_en_o} =
+       {i2c1_scl_i, 1'b1, i2c1_sda_i, 1'b1};
+`else
+assign {i2c1_scl_o, i2c1_scl_en_o, i2c1_sda_o, i2c1_sda_en_o} =
+       {i2c0_scl_i, 1'b1, i2c0_sda_i, 1'b1};
+`endif
+
+// USRUSB is unavailable
+assign {cio_usb_dp_o, cio_usb_dp_en_o, cio_usb_dn_o, cio_usb_dn_en_o,
+        usb_tx_se0_o, usb_tx_d_o} = 'b0;
+assign {usb_dp_pullup_o, usb_dn_pullup_o, usb_rx_enable_o, usb_tx_use_d_se0_o} = 'b0;
+
+`endif  // !defined USBDEV
 
   `ifdef VERILATOR
     simulator_ctrl #(
