@@ -3,14 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Drive I2C1 rather than I2C0?
-// `define DRIVE_I2C1
+//`define DRIVE_I2C1
 
 `ifdef DRIVE_I2C1
 // When driving I2C1, the I2C traffic may be indirected to one of the following.
 // Define none or one of these...
 //`define DRIVE_RPIHAT
 //`define DRIVE_RPIID
-`define DRIVE_mkBUS
+//`define DRIVE_mkBUS
 `endif
 
 // TODO: drive USBDEV traffic over PMOD rather than USRUSB?
@@ -19,16 +19,17 @@
 // Ibex demo system top level for the Sonata board
 module top_sonata (
   input              mainclk,
+  input              nrst,
 
-  output logic [7:0] userled,
+  output logic [7:0] usrled,
   output logic       led_bootok,
   output logic       led_halted,
   output logic       led_cheri,
   output logic       led_legacy,
   output logic [8:0] cherierr,
 
-  input  logic [4:0] nav_sw,
-  input  logic [7:0] user_sw,
+  input  logic [4:0] navsw,
+  input  logic [7:0] usrsw,
 
   output logic lcd_rst,
   output logic lcd_dc,
@@ -122,8 +123,8 @@ module top_sonata (
   logic clk_usb,  rst_usb_n;
   logic [7:0] reset_counter;
 
-  logic [4:0] nav_sw_n;
-  logic [7:0] user_sw_n;
+  logic [4:0] navsw_n;
+  logic [7:0] usrsw_n;
 
   initial begin
     reset_counter = 0;
@@ -152,10 +153,20 @@ module top_sonata (
   assign PMOD0_2 = gp_o[1] ? 1'b0 : 1'bZ;  // TR
   assign PMOD0_1 = gp_o[0] ? 1'b0 : 1'bZ;  // T
 
+  // Invert the signals on the second PMOD connector, just for testing
+  assign PMOD1_8 = !gp_o[7];  // CA selector.
+  assign PMOD1_7 =  gp_o[6] ? 1'bZ : 1'b0;  // C
+  assign PMOD1_6 =  gp_o[5] ? 1'bZ : 1'b0;  // TL
+  assign PMOD1_5 =  gp_o[4] ? 1'bZ : 1'b0;  // BL
+  assign PMOD1_4 =  gp_o[3] ? 1'bZ : 1'b0;  // B
+  assign PMOD1_3 =  gp_o[2] ? 1'bZ : 1'b0;  // BR
+  assign PMOD1_2 =  gp_o[1] ? 1'bZ : 1'b0;  // TR
+  assign PMOD1_1 =  gp_o[0] ? 1'bZ : 1'b0;  // T
+
   // Switch inputs have pull-ups and switches pull to ground when on. Invert here so CPU sees 1 for
   // on and 0 for off.
-  assign nav_sw_n = ~nav_sw;
-  assign user_sw_n = ~user_sw;
+  assign navsw_n = ~navsw;
+  assign usrsw_n = ~usrsw;
 
   assign USRUSB_SPD = 1'b1;
 
@@ -272,7 +283,7 @@ module top_sonata (
   wire sda1_i = SDA1;
 `endif
 
-  assign {userled, lcd_backlight, lcd_dc, lcd_rst, lcd_cs} = 'b0;
+  assign {usrled, lcd_backlight, lcd_dc, lcd_rst, lcd_cs} = 'b0;
 
   ibex_demo_system #(
     .SysClkFreq(SysClkFreq),
@@ -291,8 +302,8 @@ module top_sonata (
     .clk_peri_i   (clk_peri),
     .rst_peri_ni  (rst_peri_n),
 
-    .gp_i({user_sw_n, nav_sw_n[4:0]}),
-//    .gp_o({userled, lcd_backlight, lcd_dc, lcd_rst, lcd_cs}),
+    .gp_i({usrsw_n, navsw_n[4:0]}),
+//    .gp_o({usrled, lcd_backlight, lcd_dc, lcd_rst, lcd_cs}),
     .gp_o(gp_o),
 
     .uart_rx_i(ser0_rx),

@@ -89,7 +89,7 @@ module ibex_demo_system #(
 //`define USBDEV
 
 // TODO: drive I2C1 rather than I2C0?
-`define DRIVE_I2C1
+//`define DRIVE_I2C1
 
   localparam logic [31:0] MEM_SIZE      = 128 * 1024;  // 128 KiB
   localparam logic [31:0] MEM_START     = 32'h00100000;

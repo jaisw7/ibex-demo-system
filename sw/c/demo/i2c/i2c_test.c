@@ -11,8 +11,15 @@
 #include "gpio.h"
 #include "pwm.h"
 
-#define RPI_ID 0
-#define RPI_HAT 1
+// This test reads and reports the contents of the RPi HAT ID EEPROM
+// eg. RPi SENSE HAT (but others should work too).
+#define RPI_ID 1
+// This test reads and checks a couple of 'WHO_AM_I' registers from I2C devices
+// Requires RPi SENSE HAT.
+#define RPI_HAT 0
+
+// Without that, a chain of SparkFun AS6212 Temperature Sensor and
+// IS31FL3741 RGB LED Matrix is required
 
 /*
 enum {
@@ -120,11 +127,13 @@ static status_t read_sense_imu(void) {
     LOG_INFO("Read 0x%x", data[0]);
     TRY(i2c_testutils_write(&i2c, 0x1c, 1, addr, true)); //));
     TRY(i2c_testutils_read(&i2c, 0x1c, 1, &data[1], kDefaultTimeoutMicros));
-    LOG_INFO(" - Read 0x%x\n", data[1]);
+    LOG_INFO(" - Read 0x%x", data[1]);
     if (data[0] != 0x68 || data[1] != 0x3d) {
       LOG_INFO("*** READ FAILED ***\n");
       while (1) {
       }
+    } else {
+      LOG_INFO(" -- PASS\n");
     }
   }
 }
@@ -133,7 +142,6 @@ static status_t read_sense_imu(void) {
 extern void setup(void);
 
 void i2c_read(uint8_t dev_addr, uint8_t *buf, uint8_t n) {
-//  LOG_INFO("read %p %u\n", buf, n);
   CHECK_STATUS_OK(i2c_testutils_read(&i2c, dev_addr, n, buf, kDefaultTimeoutMicros));
 }
 
@@ -142,14 +150,11 @@ void i2c_write(uint8_t dev_addr, const uint8_t *data, uint8_t n, bool skip_stop)
   CHECK(written + n <= 64);
   written += n;
   status_t res = i2c_testutils_write(&i2c, dev_addr, n, data, skip_stop);
-  //if (!status_ok(res))
-//  LOG_INFO("res %u (%p %u\n)", res, data, n);
   CHECK_STATUS_OK(res);
   if (written + n >= 48 && !skip_stop) {
     CHECK_STATUS_OK(i2c_testutils_wait_host_idle(&i2c));
     written = 0;
   }
-//  LOG_INFO("i2c_write done\n");
 }
 
 bool main(void) {
@@ -157,18 +162,10 @@ bool main(void) {
   LOG_INFO("i2c_test started\n");
 
   mmio_region_t base_addr;
-//      mmio_region_from_addr(TOP_EARLGREY_RV_CORE_IBEX_CFG_BASE_ADDR);
-
-//  TRY(dif_rv_core_ibex_init(base_addr, &rv_core_ibex));
 
   // TODO: we've just mapped the I2C in place of USBDEV presently
-  base_addr = mmio_region_from_addr(USBDEV_BASE);  //TOP_EARLGREY_I2C2_BASE_ADDR);
+  base_addr = mmio_region_from_addr(USBDEV_BASE);
   CHECK_DIF_OK(dif_i2c_init(base_addr, &i2c));
-
-//  base_addr = mmio_region_from_addr(TOP_EARLGREY_PINMUX_AON_BASE_ADDR);
-//  TRY(dif_pinmux_init(base_addr, &pinmux));
-
-//  TRY(i2c_testutils_select_pinmux(&pinmux, 2));
 
   CHECK_DIF_OK(dif_i2c_host_set_enabled(&i2c, kDifToggleEnabled));
 
