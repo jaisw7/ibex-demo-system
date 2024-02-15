@@ -2,10 +2,16 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
-// TODO: drive I2C1 rather than I2C0?
-`define DRIVE_I2C1
-`define DRIVE_RPIHAT
+// Drive I2C1 rather than I2C0?
+// `define DRIVE_I2C1
+
+`ifdef DRIVE_I2C1
+// When driving I2C1, the I2C traffic may be indirected to one of the following.
+// Define none or one of these...
+//`define DRIVE_RPIHAT
 //`define DRIVE_RPIID
+`define DRIVE_mkBUS
+`endif
 
 // TODO: drive USBDEV traffic over PMOD rather than USRUSB?
 //`define PMOD_USBDEV
@@ -67,6 +73,10 @@ module top_sonata (
   inout  logic       SCL1,  // QWIIC only (J7)
   inout  logic       SDA1,
 `endif
+
+  // mikroBUS Click
+  inout  logic       MB5,
+  inout  logic       MB6,
 
   // PMOD interfaces
 
@@ -203,6 +213,24 @@ module top_sonata (
   wire scl1_i = RPH_G3_SCL;
   wire sda1_i = RPH_G2_SDA;
 `else
+`ifdef DRIVE_mkBUS
+  always_ff @(posedge clk_sys) begin
+    scl0_out <= MB6;
+    sda0_out <= MB5;
+  end
+  // Open Drain drivers onto I2C bus.
+  assign MB6 = scl1_oe ? scl1_o : 1'bZ;
+  assign MB5 = sda1_oe ? sda1_o : 1'bZ;
+
+  // Make it clear who is driving the I2C bus
+  assign SCL1 = scl1_oe;
+  assign SDA1 = sda1_oe;
+
+  wire scl0_i = SCL0;
+  wire sda0_i = SDA0;
+  wire scl1_i = MB6;
+  wire sda1_i = MB5;
+`else
   always_ff @(posedge clk_sys) begin
     scl0_out <= SCL1;
     sda0_out <= SDA1;
@@ -215,6 +243,7 @@ module top_sonata (
   wire sda0_i = SDA0;
   wire scl1_i = SCL1;
   wire sda1_i = SDA1;
+`endif
 `endif
 `endif
   // Output only, for logic analyser

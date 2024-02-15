@@ -169,14 +169,23 @@ set_property PULLTYPE PULLUP [get_ports nav_sw[*]]
 
 set_output_delay -clock mainclk 0.000 [get_ports userled]
 
+# QWIIC and Arduino Shield
 set_property PACKAGE_PIN U7 [get_ports SDA0]
 set_property IOSTANDARD LVCMOS33 [get_ports SDA0]
 set_property PACKAGE_PIN V9 [get_ports SCL0]
 set_property IOSTANDARD LVCMOS33 [get_ports SCL0]
+
+# QWIIC
 set_property PACKAGE_PIN V7 [get_ports SDA1]
 set_property IOSTANDARD LVCMOS33 [get_ports SDA1]
 set_property PACKAGE_PIN U9 [get_ports SCL1]
 set_property IOSTANDARD LVCMOS33 [get_ports SCL1]
+
+# mikroBUS Click
+set_property PACKAGE_PIN V1 [get_ports MB5]
+set_property IOSTANDARD LVCMOS33 [get_ports MB5]
+set_property PACKAGE_PIN U2 [get_ports MB6]
+set_property IOSTANDARD LVCMOS33 [get_ports MB6]
 
 # R-Pi Header
 
